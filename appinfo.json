@@ -1,0 +1,25 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        "location"
+    ],
+    "companyName": "MY Apps",
+    "enableMultiJS": true,
+    "longName": "TraCe",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "TraCe",
+    "targetPlatforms": [
+        "aplite",
+        "basalt",
+        "chalk"
+    ],
+    "uuid": "1f6c6035-1fdf-4287-9bc6-b5e90584e868",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}

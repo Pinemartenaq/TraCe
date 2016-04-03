@@ -3,7 +3,7 @@
 
 Window *my_window;
 static Layer *s_window_layer, *s_canvas_layer;
-TextLayer *time_layer, *dist_layer, *s_text_layer_calib_state, *star_layer;
+TextLayer *time_layer, *dist_layer, *star_layer;
 
 static char s_current_time_buffer[8], s_current_dist_buffer[16], s_current_star_buffer[16];
 static GPoint s_positions[71];
@@ -20,88 +20,7 @@ static void update_star_count(){
 				s_star_count++;
 				snprintf(s_current_star_buffer, sizeof(s_current_star_buffer),"* x %d", s_star_count);
 				text_layer_set_text(star_layer, s_current_star_buffer);
-}
-
-static void get_step_count() {
-  s_step_count = (int)health_service_sum_today(HealthMetricStepCount);
-  
-  if (st_count == 71){
-    s_positions[0] = GPoint(72, 84);
-    st_count = 1;
-    update_star_count();
-  } 
-  else{
-    GPoint p = s_positions[st_count - 1];
-    GPoint np;
-    
-    if (s_direction == 0){
-        np.x = p.x;
-        np.y = p.y - 1;
-    }
-    else if(s_direction == 1){
-      np.x = p.x + 1;
-      np.y = p.y - 1;
-    }
-    else if(s_direction == 2){
-      np.x = p.x + 1;
-      np.y = p.y;
-    }
-    else if(s_direction == 3){
-      np.x = p.x + 1;
-      np.y = p.y + 1;
-    }
-    else if(s_direction == 4){
-      np.x = p.x;
-      np.y = p.y + 1;
-    }
-    else if(s_direction == 5){
-      np.x = p.x - 1;
-      np.y = p.y + 1;
-    }
-    else if(s_direction == 6){
-      np.x = p.x - 1;
-      np.y = p.y;
-    }
-    else if(s_direction == 7){
-      np.x = p.x - 1;
-      np.y = p.y - 1;
-    }
-    
-    s_positions[st_count] = np;
-    st_count++;
-  }
-  
-  layer_mark_dirty(s_canvas_layer);
-}
-
-static void display_dist() {
-  if (s_step_count <= 10000){
-    int dis = s_step_count * 0.762;
-    static char st[1] = "m";
-    snprintf(s_current_dist_buffer, sizeof(s_current_dist_buffer),
-            "%d %s", dis, st);
-  }
-  else{
-    int d = s_step_count * 0.762;
-    int dis = d / 1000;
-    int dismod = d % 1000;
-    dismod = dismod / 100;
-    static char st[2] = "km";
-    snprintf(s_current_dist_buffer, sizeof(s_current_dist_buffer),
-            "%d.%d %s", dis, dismod, st);
-  }
-  
-   text_layer_set_text(dist_layer, s_current_dist_buffer);
-}
-
-static void health_handler(HealthEventType event, void *context) {
-  if(event == HealthEventSignificantUpdate) {
-  }
-
-  if(event != HealthEventSleepUpdate) {
-    get_step_count();
-    display_dist();
-  }
+        layer_mark_dirty(text_layer_get_layer(star_layer));
 }
 
 static void update_proc(Layer *layer, GContext *ctx) {  
@@ -115,31 +34,121 @@ static void update_proc(Layer *layer, GContext *ctx) {
     
     graphics_fill_rect(ctx, GRect(sP.x, sP.y, 3, 3), 0, 0);
   }
+  
+  layer_mark_dirty(s_canvas_layer);
+}
+
+static void get_step_count() {
+  s_step_count = (int)health_service_sum_today(HealthMetricStepCount);
+}
+
+static void display_dist() {
+  if (s_step_count <= 10000){
+    int dis = s_step_count * 0.762;
+    static char st[2] = "m";
+    snprintf(s_current_dist_buffer, sizeof(s_current_dist_buffer),
+            "%d %s", dis, st);
+  }
+  else{
+    int d = s_step_count * 0.762;
+    int dis = d / 1000;
+    int dismod = d % 1000;
+    dismod = dismod / 100;
+    static char st[2] = "km";
+    snprintf(s_current_dist_buffer, sizeof(s_current_dist_buffer),
+            "%d.%d %s", dis, dismod, st);
+  }
+  
+  text_layer_set_text(dist_layer, s_current_dist_buffer);
+  layer_mark_dirty(text_layer_get_layer(dist_layer));
+  layer_mark_dirty(s_canvas_layer);
+}
+
+static void health_handler(HealthEventType event, void *context) {
+  if(event != HealthEventSleepUpdate) {
+    get_step_count();
+  
+    snprintf(s_current_star_buffer, sizeof(s_current_star_buffer),
+             "* x %d", s_star_count);
+    
+    GRect window_bounds = layer_get_bounds(s_window_layer);
+    
+    if (st_count == 71){
+      s_positions[0] = GPoint(window_bounds.size.w / 2, window_bounds.size.h / 2);
+      st_count = 0;
+      update_star_count();
+    } 
+    else{
+      GPoint p = s_positions[st_count - 1];
+      GPoint np;
+      
+      if (s_direction == 0){
+          np.x = p.x;
+          np.y = p.y - 1;
+      }
+      else if(s_direction == 1){
+        np.x = p.x + 1;
+        np.y = p.y - 1;
+      }
+      else if(s_direction == 2){
+        np.x = p.x + 1;
+        np.y = p.y;
+      }
+      else if(s_direction == 3){
+        np.x = p.x + 1;
+        np.y = p.y + 1;
+      }
+      else if(s_direction == 4){
+        np.x = p.x;
+        np.y = p.y + 1;
+      }
+      else if(s_direction == 5){
+        np.x = p.x - 1;
+        np.y = p.y + 1;
+      }
+      else if(s_direction == 6){
+        np.x = p.x - 1;
+        np.y = p.y;
+      }
+      else if(s_direction == 7){
+        np.x = p.x - 1;
+        np.y = p.y - 1;
+      }
+      
+      s_positions[st_count] = np;
+    }
+  }
+  
+  st_count++;
+  display_dist();
+  layer_mark_dirty(s_canvas_layer);
 }
 
 static void compass_heading_handler(CompassHeadingData heading_data) {
-  if(heading_data.magnetic_heading >= 337.5 && heading_data.magnetic_heading < 22.5){
+  int dir =  TRIGANGLE_TO_DEG(heading_data.magnetic_heading);
+
+	if(dir >= 337.5 && dir < 22.5){
     s_direction = 0;
 	}
-	else if(heading_data.magnetic_heading >= 22.5 && heading_data.magnetic_heading < 67.5){
+	else if(dir >= 22.5 && dir < 67.5){
     s_direction = 1;
 	}
-  else if(heading_data.magnetic_heading >= 67.5 && heading_data.magnetic_heading < 112.5){
+  else if(dir >= 67.5 && dir < 112.5){
 		s_direction = 2;
 	}
-	else if(heading_data.magnetic_heading >= 112.5 && heading_data.magnetic_heading < 157.5){
+	else if(dir >= 112.5 && dir < 157.5){
 		s_direction = 3;
 	}
-	else if(heading_data.magnetic_heading >= 157.5 && heading_data.magnetic_heading < 202.5){
+	else if(dir >= 157.5 && dir < 202.5){
 		s_direction = 4;
 	}
-	else if(heading_data.magnetic_heading >= 202.5 && heading_data.magnetic_heading < 247.5){
+	else if(dir >= 202.5 && dir < 247.5){
 		s_direction = 5;
 	}
-	else if(heading_data.magnetic_heading >= 247.5 && heading_data.magnetic_heading < 292.5){
+	else if(dir >= 247.5 && dir < 292.5){
 		s_direction = 6;
 	}	
-	else if(heading_data.magnetic_heading >= 292.5 && heading_data.magnetic_heading < 337.5){
+	else if(dir >= 292.5 && dir < 337.5){
 		s_direction = 7;
 	}	
 }
@@ -190,8 +199,6 @@ static void window_load(Window *window) {
   text_layer_set_font(star_layer,
                       fonts_get_system_font(FONT_KEY_GOTHIC_18));
   text_layer_set_text_alignment(star_layer, GTextAlignmentCenter);
-  snprintf(s_current_star_buffer, sizeof(s_current_star_buffer),
-            "* x %d", s_star_count);
   text_layer_set_text(star_layer, s_current_star_buffer);
   layer_add_child(s_window_layer, text_layer_get_layer(star_layer));
   
@@ -199,7 +206,7 @@ static void window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, update_proc);
   layer_add_child(s_window_layer, s_canvas_layer);
   
-  s_positions[0] = GPoint(72, 84);
+  s_positions[0] = GPoint(window_bounds.size.w / 2, window_bounds.size.h / 2);
   st_count ++;
   
   if(step_data_is_available()) {
@@ -217,7 +224,7 @@ static void window_unload(Window *window) {
 
 void handle_init(void) {
   
-  compass_service_set_heading_filter(DEG_TO_TRIGANGLE(10));
+  compass_service_set_heading_filter(DEG_TO_TRIGANGLE(2));
   compass_service_subscribe(&compass_heading_handler);
   
   my_window = window_create();
@@ -235,7 +242,6 @@ void handle_init(void) {
 }
 
 void handle_deinit(void) {
-  text_layer_destroy(time_layer);
   compass_service_unsubscribe();
   health_service_events_unsubscribe();
   tick_timer_service_unsubscribe();
